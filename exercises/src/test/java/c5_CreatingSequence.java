@@ -4,13 +4,16 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * In this chapter we are going to cover fundamentals of how to create a sequence. At the end of this
@@ -269,10 +272,15 @@ public class c5_CreatingSequence {
         //------------------------------------------------------
 
         Flux<Integer> createFlux = Flux.create(sink -> {
-            for (int i = 0; i <= 5; i++) {
-                var finalInt = i;
-                new Thread(() -> sink.next(finalInt)).start();
-            } //todo: fix following code so it emits values from 0 to 5 and then completes
+            var count = new AtomicInteger();
+            IntStream.range(0, 6).forEach(i -> new Thread(() -> {
+                var current = count.getAndIncrement();
+                sink.next(current);
+                if (current == 5) {
+                    sink.complete();
+                }
+            }).start());
+            //todo: fix following code so it emits values from 0 to 5 and then completes
         });
 
         //------------------------------------------------------
